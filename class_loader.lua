@@ -248,12 +248,12 @@ do
             currentPackage = preparePackage(directory, files)
         end
 
-        for i, filePath in ipairs(files) do
-            loadFile(directory .. filePath)
+        for i, fileName in ipairs(files) do
+            loadFile(directory .. fileName)
         end
 
-        for i, directoryPath in ipairs(directories) do
-            loadDirectory(directory .. directoryPath)
+        for i, directoryName in ipairs(directories) do
+            loadDirectory(directory .. directoryName)
         end
     end
 

@@ -193,20 +193,6 @@ do
         currentPackage[objectName] = object
     end
 
-    local function getDirectoryContents(directory)
-        local files, directories = {}, {}
-
-        for fileName in io.popen("ls -pUqAL '" .. directory .. "'"):lines() do
-            if fileName:sub(-4) == ".lua" then
-                table.insert(files, fileName)
-            elseif fileName:sub(-1) == "/" then
-                table.insert(directories, fileName)
-            end
-        end
-
-        return files, directories
-    end
-
     local function preparePackage(directory, files)
         local packageName = filePathToObjectPackageName(directory):sub(1, -2)
         local package = ClassLoader.GetPackage(packageName)
@@ -231,7 +217,7 @@ do
     local function loadDirectory(directory, importMode)
         assert(isstring(directory), "The directory to load must be provided as a string")
 
-        local files, directories = getDirectoryContents(directory)
+        local files, directories = file.Find(directory .. "*", "LUA")
 
         if importMode then
             preparePackage(directory, files)
@@ -245,7 +231,7 @@ do
         end
 
         for i, directoryPath in ipairs(directories) do
-            loadDirectory(directory .. directoryPath)
+            loadDirectory(directory .. directoryPath .. "/")
         end
     end
 

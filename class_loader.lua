@@ -282,8 +282,13 @@ do
         for packageName, package in pairs(packages) do
             setmetatable(package, nil)
 
-            if not next(package, "__name") then --Name is the last default key
-                packages[packageName] = nil
+            packages[packageName] = nil
+
+            for key, _ in pairs(package) do
+                if key:sub(2) ~= "__" then --If our package only contains metadata it's safe to delete
+                    packages[packageName] = package
+                    break
+                end
             end
         end
     end

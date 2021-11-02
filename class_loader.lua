@@ -208,7 +208,7 @@ do
     local function loadFile(filePath)
         local packageName, objectName = filePathToObjectPackageAndName(filePath)
 
-        local file = loadfile(filePath)
+        local file = CompileFile(filePath)
         debug.setfenv(file, createFileEnvironment(filePath, packageName, objectName))
 
         registerObject(packageName, objectName, file())

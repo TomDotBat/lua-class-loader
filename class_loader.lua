@@ -240,7 +240,7 @@ do
         assert(isstring(directory), "The directory to load must be provided as a string")
 
         local files, directories = getDirectoryContents(directory)
-        
+
         if importMode then
             preparePackage(directory, files)
             return

@@ -1,11 +1,3 @@
-local function isstring(value)
-    return type(value) == "string"
-end
-
-local function istable(value)
-    return type(value) == "table"
-end
-
 local ClassLoader = {}
 
 local packages = {}

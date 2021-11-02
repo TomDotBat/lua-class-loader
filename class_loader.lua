@@ -4,18 +4,25 @@ local packages = {}
 local currentPackage, currentFile
 local baseDirectory
 
-local function stripLastItemFromPackageName(packageName)
-    return packageName:sub(1,
-        -(#packageName:match("[^.]+$") --Get the length of the last item from the location
-            + 2))
-end
+local realmReplacements = {
+    ["cl_"] = "",
+    ["sv_"] = "",
+    ["sh_"] = ""
+}
 
 local function packageNameToObjectName(packageName)
     return packageName
         :match("[^.]+$") --Get the last item from the package name
+        :gsub("%a%a_", realmReplacements) --Strip realm prefixes
         :gsub("^%l", string.upper) --Capitalise first letter
         :gsub("_%l", string.upper) --Capitalise every letter with an underscore before
         :gsub("%_", "") --Remove all underscores
+end
+
+local function stripLastItemFromPackageName(packageName)
+    return packageName:sub(1,
+        -(#packageName:match("[^.]+$") --Get the length of the last item from the location
+            + 2))
 end
 
 do
@@ -214,6 +221,27 @@ do
         registerObject(packageName, objectName, file())
     end
 
+    local function loadFiles(directory, files)
+        for i, fileName in ipairs(files) do
+            if fileName:sub(-4) == ".lua" then
+                local filePath = directory .. fileName
+
+                if CLIENT then
+                    loadFile(filePath)
+                else
+                    if fileName:StartWith("cl_") then
+                        AddCSLuaFile(filePath)
+                    elseif fileName:StartWith("sh_") then
+                        AddCSLuaFile(filePath)
+                        loadFile(filePath)
+                    else
+                        loadFile(filePath)
+                    end
+                end
+            end
+        end
+    end
+
     local function loadDirectory(directory, importMode)
         assert(isstring(directory), "The directory to load must be provided as a string")
 
@@ -226,9 +254,7 @@ do
             currentPackage = preparePackage(directory, files)
         end
 
-        for i, fileName in ipairs(files) do
-            loadFile(directory .. fileName)
-        end
+        loadFiles(directory, files)
 
         for i, directoryName in ipairs(directories) do
             loadDirectory(directory .. directoryName .. "/")

@@ -125,7 +125,7 @@ do
 
             return class
         end,
-        Singleton = function(aa)
+        Singleton = function()
             local singleton = getCurrentFileObject()
             singleton.__type = "Singleton"
             singleton.__isSingleton = true

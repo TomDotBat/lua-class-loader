@@ -7,7 +7,6 @@ ClassLoader is a library that brings an easy-to-use and clean interface to the o
 
 It aims to help Lua developers write OOP code quickly and easily, without the need for in-depth knowledge of metatables and implementing your own loader.
 
-
 ## Documentation
 [Visit the Wiki](https://github.com/TomDotBat/lua-class-loader/wiki) to find helpful information on the usage of this library and more.
 
@@ -15,3 +14,7 @@ It aims to help Lua developers write OOP code quickly and easily, without the ne
 ## Versions
 - [Plain Lua (Linux only)](https://github.com/TomDotBat/lua-class-loader/tree/master)
 - [Garry's Mod](https://github.com/TomDotBat/lua-class-loader/tree/gmod)
+
+
+## Try it out
+Visit the ClassLoader [Replit](https://replit.com/@TomDotBat/ClassLoader) to see it in action.

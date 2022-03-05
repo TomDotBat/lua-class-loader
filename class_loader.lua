@@ -64,7 +64,7 @@ do
         local objects = {}
 
         for objectName, object in pairs(packages[packageName]) do
-            if objectName:sub(2) ~= "__" then
+            if objectName:sub(0, 2) ~= "__" then
                 currentFile[objectName] = object
                 table.insert(objects, object)
             end
@@ -285,7 +285,7 @@ do
             packages[packageName] = nil
 
             for key, _ in pairs(package) do
-                if key:sub(2) ~= "__" then --If our package only contains metadata it's safe to delete
+                if key:sub(0, 2) ~= "__" then --If our package only contains metadata it's safe to delete
                     packages[packageName] = package
                     break
                 end

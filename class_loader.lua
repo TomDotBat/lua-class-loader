@@ -64,7 +64,7 @@ do
         local objects = {}
 
         for objectName, object in pairs(packages[packageName]) do
-            if objectName:sub(2) ~= "__" then
+            if objectName:sub(0, 2) ~= "__" then
                 currentFile[objectName] = object
                 table.insert(objects, object)
             end
@@ -113,6 +113,22 @@ do
         return setmetatable({}, class)
     end
 
+    local Enum = {}
+    Enum.__type = "Enum"
+    Enum.__isEnum = true
+    Enum.__index = Enum
+
+    function Enum:GetValues()
+        return self._values
+    end
+
+    function Enum:GetValueOf(name)
+        local value = self[name]
+        if istable(value) and value.__type == "EnumValue" then
+            return value
+        end
+    end
+
     local baseEnvironment = {
         Import = ClassLoader.ImportObject,
         Class = function()
@@ -134,11 +150,7 @@ do
             return singleton
         end,
         Enum = function()
-            local enum = getCurrentFileObject()
-            enum.__type = "Enum"
-            enum.__isEnum = true
-
-            return enum
+            return setmetatable(getCurrentFileObject(), Enum)
         end
     }
 
@@ -205,6 +217,80 @@ do
         return currentFile
     end
 
+    local EnumValue = {}
+    EnumValue.__type = "EnumValue"
+    EnumValue.__isEnumValue = true
+    EnumValue.__index = EnumValue
+
+    local function newEnumValue(name, value, declaringClass)
+        local tbl = setmetatable({}, EnumValue)
+
+        tbl._name = name
+        tbl._value = value
+        tbl._declaringClass = declaringClass
+
+        return tbl
+    end
+
+    function EnumValue:GetName()
+        return self._name
+    end
+
+    function EnumValue:GetValue()
+        return self._value
+    end
+
+    function EnumValue:GetDeclaringClass()
+        return self._declaringClass
+    end
+
+    function EnumValue:__add(other)
+        return self._value + other._value
+    end
+
+    function EnumValue:__sub(other)
+        return self._value - other._value
+    end
+
+    function EnumValue:__mul(other)
+        return self._value * other._value
+    end
+
+    function EnumValue:__div(other)
+        return self._value / other._value
+    end
+
+    function EnumValue:__mod(other)
+        return self._value % other._value
+    end
+
+    function EnumValue:__eq(other)
+        return self._value == other._value
+    end
+
+    function EnumValue:__lt(other)
+        return self._value < other._value
+    end
+
+    function EnumValue:__le(other)
+        return self._value <= other._value
+    end
+
+    local function setupEnum(enum)
+        local values = {}
+
+        for name, value in pairs(enum) do
+            if name:sub(0, 2) ~= "__" then --Ignore type, isEnum, etc
+                local enumValue = newEnumValue(name, value, enum)
+
+                enum[name] = enumValue
+                table.insert(values, enumValue)
+            end
+        end
+
+        enum._values = values
+    end
+
     local function registerObject(packageName, objectName, object)
         assert(istable(object), "Invalid object returned by: " .. packageName  .. "." .. objectName)
 
@@ -213,6 +299,10 @@ do
 
         if object.Extends == ClassLoader.ExtendObject then
             object.Extends = nil
+        end
+
+        if object.__type == "Enum" then
+            setupEnum(object)
         end
 
         currentPackage[objectName] = object
@@ -285,7 +375,7 @@ do
             packages[packageName] = nil
 
             for key, _ in pairs(package) do
-                if key:sub(2) ~= "__" then --If our package only contains metadata it's safe to delete
+                if key:sub(0, 2) ~= "__" then --If our package only contains metadata it's safe to delete
                     packages[packageName] = package
                     break
                 end

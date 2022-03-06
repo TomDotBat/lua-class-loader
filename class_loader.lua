@@ -154,6 +154,30 @@ do
         end
     }
 
+    local type = type
+    local getmetatable = getmetatable
+    local function enhancedType(object)
+        local typ = type(object)
+
+        if typ == "table" then
+            local objectType = object.__type
+            if objectType == "EnumValue" then
+                local declaringClass = object._declaringClass
+                if declaringClass then
+                    typ = declaringClass.__name or typ
+                end
+            elseif objectType == "Enum" then
+                typ = object.__name .. "#Template"
+            elseif getmetatable(object) == nil then --This is an uninitialised class.
+                typ = object.__name and (object.__name .. "#Template") or typ
+            else
+                typ = object.__name or typ
+            end
+        end
+
+        return typ
+    end
+
     baseEnvironment.__index = baseEnvironment
     setmetatable(baseEnvironment, {__index = _G})
 
@@ -169,6 +193,7 @@ do
             __type = "Package",
             __isPackage = true,
             _G = _G,
+            type = enhancedType,
             pairs = pairs,
             ipairs = ipairs
         }

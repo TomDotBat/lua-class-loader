@@ -168,7 +168,9 @@ do
             __name = packageName,
             __type = "Package",
             __isPackage = true,
-            _G = _G
+            _G = _G,
+            pairs = pairs,
+            ipairs = ipairs
         }
 
         package.__index = package

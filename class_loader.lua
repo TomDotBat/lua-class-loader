@@ -155,6 +155,7 @@ do
     }
 
     baseEnvironment.__index = baseEnvironment
+    setmetatable(baseEnvironment, {__index = _G})
 
     function ClassLoader.GetPackage(packageName)
         assert(isstring(packageName), "The package location must be provided as a string")

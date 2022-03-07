@@ -25,6 +25,33 @@ end
 
 local ClassLoader = {}
 
+do
+    local type = type
+    local getmetatable = getmetatable
+
+    function ClassLoader.EnhancedType(object)
+        local typ = type(object)
+
+        if typ == "table" then
+            local objectType = object.__type
+            if objectType == "EnumValue" then
+                local declaringClass = object._declaringClass
+                if declaringClass then
+                    typ = declaringClass.__name or typ
+                end
+            elseif objectType == "Enum" then
+                typ = object.__name .. "#Template"
+            elseif getmetatable(object) == nil then --This is an uninitialised class.
+                typ = object.__name and (object.__name .. "#Template") or typ
+            else
+                typ = object.__name or typ
+            end
+        end
+
+        return typ
+    end
+end
+
 local packages = {}
 local currentPackage, currentFile
 local baseDirectory
@@ -109,7 +136,7 @@ do
     end
 
     local function instantiateClass(class)
-        assert(class, "The class constructor must be called with a colon")
+        assert(istable(class), "The class constructor must be called with a colon")
         return setmetatable({}, class)
     end
 
@@ -139,6 +166,7 @@ do
 
             class.New = instantiateClass
             class.Extends = ClassLoader.ExtendObject
+            class.Property = ClassLoader.CreateProperty
 
             return class
         end,
@@ -153,30 +181,6 @@ do
             return setmetatable(getCurrentFileObject(), Enum)
         end
     }
-
-    local type = type
-    local getmetatable = getmetatable
-    local function enhancedType(object)
-        local typ = type(object)
-
-        if typ == "table" then
-            local objectType = object.__type
-            if objectType == "EnumValue" then
-                local declaringClass = object._declaringClass
-                if declaringClass then
-                    typ = declaringClass.__name or typ
-                end
-            elseif objectType == "Enum" then
-                typ = object.__name .. "#Template"
-            elseif getmetatable(object) == nil then --This is an uninitialised class.
-                typ = object.__name and (object.__name .. "#Template") or typ
-            else
-                typ = object.__name or typ
-            end
-        end
-
-        return typ
-    end
 
     baseEnvironment.__index = baseEnvironment
     setmetatable(baseEnvironment, {__index = _G})
@@ -193,7 +197,7 @@ do
             __type = "Package",
             __isPackage = true,
             _G = _G,
-            type = enhancedType,
+            type = ClassLoader.EnhancedType,
             pairs = pairs,
             ipairs = ipairs
         }
@@ -218,6 +222,37 @@ function ClassLoader.ExtendObject(class, super)
 
     class.__super = super
     setmetatable(class, super)
+
+    return class
+end
+
+function ClassLoader.CreateProperty(class, name, typ, default)
+    assert(istable(class), "The property builder must be called with a colon")
+    assert(isstring(name), "The property name must be a string")
+    assert(typ == nil or isstring(typ), "The property type must be a string or nil")
+
+    local privateName = "_" .. name:gsub("^%u", string.lower)
+
+    class["Get" .. name] = function(self)
+        return self[privateName]
+    end
+
+    if typ then
+        class["Set" .. name] = function(self, value)
+            local actualType = ClassLoader.EnhancedType(value)
+            assert(actualType == typ, "Unexpected value of type \"" .. actualType .. "\" given for property: " .. name)
+
+            self[privateName] = value
+        end
+    else
+        class["Set" .. name] = function(self, value)
+            self[privateName] = value
+        end
+    end
+
+    if default then
+        class["Set" .. name](class, default)
+    end
 
     return class
 end
@@ -327,6 +362,10 @@ do
 
         if object.Extends == ClassLoader.ExtendObject then
             object.Extends = nil
+        end
+
+        if object.Property == ClassLoader.CreateProperty then
+            object.Property = nil
         end
 
         if object.__type == "Enum" then
